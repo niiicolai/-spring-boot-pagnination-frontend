@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cars</title>    
+</head>
+<body>
+    <h1>Cars</h1>
+    
+    <div>
+        <select id="sort_1" onchange="onFilter()">
+            <option value="id">Id</option>
+            <option value="brand">Brand</option>
+            <option value="model">Model</option>
+            <option value="color">Color</option>
+            <option value="kilometers">Kilometers</option>
+        </select>
+        <select id="sort_1_direction" onchange="onFilter()">
+            <option value="asc">Asc</option>
+            <option value="desc">Desc</option>
+        </select>
+    </div>
+
+    <table id="cars">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Color</th>
+                <th>Kilometers</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div>
+        <a id="prev-page">Previous page</a>
+        <a id="next-page">Next page</a>
+    </div>
+    <script>
+
+        function initButtons() {
+            const page = parseInt(getPageFromUrl());
+            const prevPage = document.getElementById('prev-page');
+            const nextPage = document.getElementById('next-page');
+            prevPage.href = getUrlParameters((page == 0 ? 0 : page - 1));
+            nextPage.href = getUrlParameters((page + 1));
+        }
+
+        function initFilter() {            
+            const sort_1 = document.getElementById('sort_1');
+            const sort_1_direction = document.getElementById('sort_1_direction');
+
+            const sortOptions = sort_1.getElementsByTagName('option');
+            const sortDirectionOptions = sort_1_direction.getElementsByTagName('option');
+
+            const sort = getSortFromUrl();
+            const sortArray = sort.split(',');
+            const sortValue = sortArray[0];
+            const sortDirection = sortArray[1];
+            
+            for (let i = 0; i < sortOptions.length; i++) {
+                const option = sortOptions[i];
+                if (option.value == sortValue) {
+                    option.selected = true;
+                }
+            }
+
+            for (let i = 0; i < sortDirectionOptions.length; i++) {
+                const option = sortDirectionOptions[i];
+                if (option.value == sortDirection) {
+                    option.selected = true;
+                }
+            }
+        }
+
+        function onFilter() {
+            const page = getPageFromUrl();
+            const url = getUrlParameters(page);
+            
+            location.href = url;
+        }
+
+        function addCar(car) {
+            const cars = document.getElementById('cars');
+            const tbody = cars.getElementsByTagName('tbody')[0];
+            const tr = `
+                <tr>
+                    <td>${car.id}</td>
+                    <td>${car.brand}</td>
+                    <td>${car.model}</td>
+                    <td>${car.color}</td>
+                    <td>${car.kilometers}</td>
+                </tr>
+            `;
+            tbody.innerHTML += tr;            
+        }
+
+        function getSort() {
+            const sort_1 = document.getElementById('sort_1');
+            const sort_1_direction = document.getElementById('sort_1_direction');
+            const sort = sort_1.value + ',' + sort_1_direction.value;
+            return sort;
+        }
+
+        function getSortFromUrl() {
+            const defSort = 'id,asc';
+            const url = new URL(window.location.href);
+            const sort = url.searchParams.get('sort');
+            if (sort) {
+                return sort;
+            } else {
+                return defSort;
+            }
+        }
+
+        function getPageFromUrl() {
+            const defPage = 0;
+            const url = new URL(window.location.href);
+            const page = url.searchParams.get('page');
+            if (page) {
+                return page;
+            } else {
+                return defPage;
+            }
+        }
+
+        function getSize() {
+            const defSize = 10;
+            const url = new URL(window.location.href);
+            const size = url.searchParams.get('size');
+            if (size) {
+                return size;
+            } else {
+                return defSize;
+            }
+        }
+
+        function getUrlParameters(page) {
+            const size = getSize();
+            const sort = getSort();
+            return `?page=${page}&size=${size}&sort=${sort}`;
+        }
+
+        function clearCars() {
+            const cars = document.getElementById('cars');
+            const tbody = cars.getElementsByTagName('tbody')[0];
+            tbody.innerHTML = '';
+        }
+
+        function getCars(page) {
+            clearCars();
+            const url = `http://localhost:8080/api/car${getUrlParameters(page)}`
+            fetch(url)
+                .then(response => response.json())
+                .then(cars => {
+                    cars.forEach(car => addCar(car));
+                });
+        }
+
+        initButtons();
+        initFilter();
+        getCars(getPageFromUrl());
+    </script>
+</body>
+</html>
